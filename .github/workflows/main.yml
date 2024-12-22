@@ -40,7 +40,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: python
-          source-root: .
+          source-root: ./backend_core  # Adjust the root directory
+          config-file: .github/codeql-config.yml  # Optional: Use a custom config file
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
