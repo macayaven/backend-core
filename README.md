@@ -2,6 +2,15 @@
 
 Core backend services for personal website built with FastAPI, SQLAlchemy, and modern Python practices.
 
+[![Build Status](https://github.com/macayaven/backend-core/actions/workflows/main.yml/badge.svg)](https://github.com/macayaven/backend-core/actions)
+[![Code Quality](https://img.shields.io/codeclimate/maintainability/macayaven/backend-core)](https://codeclimate.com/github/macayaven/backend-core)
+[![Coverage Status](https://coveralls.io/repos/github/macayaven/backend-core/badge.svg?branch=main)](https://coveralls.io/github/macayaven/backend-core?branch=main)
+[![License](https://img.shields.io/github/license/macayaven/backend-core)](https://github.com/macayaven/backend-core/blob/main/LICENSE)
+[![Docker Image](https://img.shields.io/docker/pulls/macayaven/backend-core)](https://hub.docker.com/r/macayaven/backend-core)
+[![Contributors](https://img.shields.io/github/contributors/macayaven/backend-core)](https://github.com/macayaven/backend-core/graphs/contributors)
+[![Stars](https://img.shields.io/github/stars/macayaven/backend-core?style=social)](https://github.com/macayaven/backend-core/stargazers)
+[![Open Issues](https://img.shields.io/github/issues/macayaven/backend-core)](https://github.com/macayaven/backend-core/issues)
+
 ## Project Structure
 
 ```
