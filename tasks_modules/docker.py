@@ -27,7 +27,7 @@ def up_docker(c: Context, environment: str = "production") -> None:
         c (Context): Invoke context.
         environment (str): Environment to use ('production' or 'development').
     """
-    c.run(f"docker compose up -d")
+    c.run("docker compose up -d")
 
 
 @invoke_task

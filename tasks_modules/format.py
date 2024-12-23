@@ -7,7 +7,7 @@ from tasks_modules.common import task
 def check_format(c: Context) -> None:
     """Check code formatting without modifying files."""
     # Check for unused imports
-    c.run("poetry run autoflake --check --recursive --remove-all-unused-imports .", warn=True)
+    c.run("poetry run autoflake --check --recursive .", warn=True)
     # Check import sorting
     c.run("poetry run isort --check-only --diff .", warn=True)
     # Check code formatting

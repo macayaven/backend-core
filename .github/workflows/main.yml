@@ -124,7 +124,7 @@ jobs:
         run: poetry run ruff check .
         
       - name: Run MyPy Type Checking
-        run: poetry run mypy .
+        run: poetry run mypy . --config-file pyproject.toml
 
   test:
     name: Run Tests
