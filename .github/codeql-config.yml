@@ -14,27 +14,21 @@ excludes:
 queries:
   - python-security-and-quality.qls  # Standard security and quality queries for Python
   - python-dependencies.qls         # Analyze dependencies
-  - +custom-queries                 # Include any custom queries in the .github/codeql folder
+  # Remove "+custom-queries" unless you define a folder with custom queries
+
+# Paths for the analysis
+paths:
+  source: 
+    - backend_core  # Define the root folder of your application
+  include:
+    - alembic/**  # Include Alembic files for analysis
+    - core/config.py
+    - api/v1/endpoints/**
+  exclude:
+    - db/migrations/**
 
 # Enable experimental features (if necessary)
 experimental: true
-
-# Advanced configuration options
-paths:
-  source: backend_core  # Define the root folder of your application
-
-  # Optionally define specific paths for third-party code or dependencies
-  libraries:
-    - alembic/**  # Include Alembic files for analysis if needed
-    - core/config.py
-    - api/v1/endpoints/**
-
-# Database configuration (if applicable)
-database:
-  include:
-    - db/session.py
-  exclude:
-    - db/migrations/**
 
 # Optional metadata for tracking
 metadata:
