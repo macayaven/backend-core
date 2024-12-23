@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # PostgreSQL Database
-    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_SERVER: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    POSTGRES_PORT: str = "5432"
+    POSTGRES_PORT: str
 
     # First superuser
     FIRST_SUPERUSER_EMAIL: str
