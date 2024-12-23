@@ -4,18 +4,24 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 env:
-  # Default environment variables for testing
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
-  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-  POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-  FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
-  FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
-  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@${{ secrets.POSTGRES_HOST }}:5432/${{ secrets.POSTGRES_DB }}
+  # Default environment variables with fallbacks
+  SECRET_KEY: ${{ secrets.SECRET_KEY || 'default_secret_key_for_testing' }}
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'admin' }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'password' }}
+  POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'backend_core' }}
+  POSTGRES_HOST: ${{ secrets.POSTGRES_HOST || 'db' }}
+  FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL || 'admin@example.com' }}
+  FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD || 'password' }}
+  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER || 'admin' }}:${{ secrets.POSTGRES_PASSWORD || 'password' }}@${{ secrets.POSTGRES_HOST || 'db' }}:5432/${{ secrets.POSTGRES_DB || 'backend_core' }}
 
 jobs:
   dependency-review:
@@ -25,11 +31,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v3
 
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-24.04
     permissions:
       security-events: write
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,49 +62,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
 
       - name: Install Poetry
-        run: pip install poetry
+        run: pipx install poetry
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create false
+          poetry config installer.parallel true
 
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: poetry install --no-root --no-interaction
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
+          queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-
-  checkout-and-setup:
-    name: Checkout and Setup Environment
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          category: "/language:python"
 
   format-and-lint:
     name: Format and Lint
@@ -92,9 +96,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
           
       - name: Install Poetry
-        run: pip install poetry
+        run: pipx install poetry
         
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
@@ -105,23 +110,33 @@ jobs:
             ${{ runner.os }}-poetry-
             
       - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-        
-      - name: Run Lint and Format Checks
         run: |
-          poetry run invoke check-format
-          poetry run invoke lint
+          poetry config virtualenvs.create false
+          poetry install --no-root --no-interaction
+        
+      - name: Run Black Format Check
+        run: poetry run black --check .
+        
+      - name: Run isort Check
+        run: poetry run isort --check-only --diff .
+        
+      - name: Run Ruff Linting
+        run: poetry run ruff check .
+        
+      - name: Run MyPy Type Checking
+        run: poetry run mypy .
 
   test:
     name: Run Tests
     runs-on: ubuntu-24.04
+    needs: [format-and-lint]
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
@@ -136,52 +151,69 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
           
       - name: Install Poetry
-        run: pip install poetry
+        run: pipx install poetry
         
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-            
       - name: Install Dependencies with Poetry
-        run: poetry install --no-root
+        run: |
+          poetry config virtualenvs.create false
+          poetry install --no-root --no-interaction
         
-      - name: Run Local Tests
-        
-      - name: Test in Docker
+      - name: Run Tests with Coverage
+        run: |
+          poetry run pytest \
+            --cov=backend_core \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=80 \
+            --junitxml=pytest.xml
+
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov
+            pytest.xml
+
+      - name: Test in Docker Environment
         run: poetry run invoke test-docker
+
+  container-scan:
+    name: Container Security Scan
+    needs: [test]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t app:${{ github.sha }} .
+
+      - name: Run Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'app:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
   docker-build-and-push:
     name: Build and Push Docker Image
-    needs: [test, format-and-lint]
+    needs: [test, container-scan]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -189,13 +221,28 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/backend-core
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend-core:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-core:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-core:buildcache,mode=max
           build-args: |
             ENV=production
             SECRET_KEY=${{ secrets.SECRET_KEY }}
@@ -203,35 +250,20 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
 
-  run-docker-compose-services:
-    name: Run Docker Compose Services
+  deploy:
+    name: Deploy to Production
     needs: [docker-build-and-push]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    environment: production
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          
-      - name: Install Poetry
-        run: pip install poetry
-        
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-            
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-        
-      - name: Start Services
-        run: docker compose -p backend_core up --build -d
-        
-      - name: Stop Services
-        run: docker compose -p backend_core down
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
