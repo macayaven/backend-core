@@ -184,6 +184,15 @@ jobs:
           mkdir -p coverage
           chmod 777 coverage
           poetry run invoke test-docker
+        env:
+          SECRET_KEY: default_secret_key_for_testing
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changethis
+          POSTGRES_DB: postgres
+          POSTGRES_SERVER: postgres
+          FIRST_SUPERUSER_EMAIL: admin@example.com
+          FIRST_SUPERUSER_PASSWORD: changethis
+          POSTGRES_PORT: 5432
 
   container-scan:
     name: Container Security Scan
