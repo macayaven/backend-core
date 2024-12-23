@@ -61,7 +61,7 @@ def test_docker(c: Context) -> None:
     build_docker(c, environment="development")
 
     # Run the backend service in test mode
-    c.run("docker compose run --rm backend sh -c 'POSTGRES_SERVER=postgres pytest'")
+    c.run("docker compose run --rm --user $(id -u):$(id -g) backend sh -c 'POSTGRES_SERVER=postgres pytest'")
 
     # Optionally bring down the containers after tests
     down_docker(c)

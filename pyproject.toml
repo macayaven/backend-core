@@ -77,3 +77,14 @@ unsafe-fixes = true
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["E203"]
+
+[coverage:run]
+data_file = coverage/.coverage
+parallel = true
+
+[coverage:report]
+precision = 2
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError

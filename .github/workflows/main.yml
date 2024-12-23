@@ -176,7 +176,12 @@ jobs:
             pytest.xml
 
       - name: Test in Docker Environment
-        run: poetry run invoke test-docker
+        run: |
+          mkdir -p coverage
+          chmod 777 coverage
+          poetry run invoke test-docker
+        env:
+          COVERAGE_FILE: coverage/.coverage
 
   container-scan:
     name: Container Security Scan
