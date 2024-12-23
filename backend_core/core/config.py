@@ -53,7 +53,7 @@ class Settings(BaseSettings):
                 password=self.POSTGRES_PASSWORD,
                 host=server,
                 port=int(self.POSTGRES_PORT),
-                path=f"/{self.POSTGRES_DB}",
+                path=self.POSTGRES_DB,
             )
         )
 
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
-        env_file=".env",
+        env_file=".env.test" if __name__ == "tests.conftest" else ".env",
         extra="ignore",
         env_file_encoding="utf-8",
     )

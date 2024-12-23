@@ -1,6 +1,10 @@
+"""Docker-related tasks."""
+
 import time
+from typing import Optional
 
 from invoke.context import Context
+from invoke.runners import Result
 
 from tasks_modules.common import task as invoke_task
 
@@ -54,7 +58,7 @@ def up_docker(c: Context, target: str = "development") -> None:
 @invoke_task
 def down_docker(c: Context) -> None:
     """Stop Docker containers."""
-    c.run("docker compose down")
+    c.run("docker compose down --remove-orphans")
 
 
 @invoke_task
@@ -73,6 +77,7 @@ def test_docker(c: Context) -> None:
     c.run(
         "docker compose run --rm "
         "-e DOCKER_POSTGRES_SERVER=postgres "  # Set Docker-specific database host
+        "-e ENV_FILE=.env.test "  # Use test environment file
         "backend bash -c '"
         "poetry install --no-root && "
         "poetry run pytest tests/ "
@@ -97,22 +102,27 @@ def restart_docker(c: Context, target: str = "development") -> None:
 @invoke_task
 def up_db(c: Context) -> None:
     """Start only the database container and wait until it's healthy."""
+    # Start the database container
     c.run("docker compose up -d postgres")
 
-    # Wait for database to be ready
-    print("Waiting for database to be ready...")
-    retries = 30
-    while retries > 0:
-        try:
-            c.run("docker compose exec postgres pg_isready", hide=True)
-            print("Database is ready!")
-            break
-        except Exception:
-            retries -= 1
-            time.sleep(1)
+    # Wait for the database to be ready
+    max_retries = 30
+    retry_interval = 1  # seconds
 
-    if retries == 0:
-        raise Exception("Database failed to start")
+    for _ in range(max_retries):
+        try:
+            # Check if the container is healthy
+            result: Optional[Result] = c.run("docker compose ps postgres", hide=True)
+            if result is not None and "healthy" in result.stdout:
+                print("Database is ready!")
+                return
+        except Exception:
+            pass
+
+        print("Waiting for database to be ready...")
+        time.sleep(retry_interval)
+
+    raise Exception("Database failed to become ready in time")
 
 
 @invoke_task
@@ -125,5 +135,5 @@ def down_db(c: Context) -> None:
 @invoke_task
 def clean_docker(c: Context) -> None:
     """Clean up Docker containers and images."""
-    c.run("docker compose down --remove-orphans", warn=True)
-    c.run("docker system prune -f", warn=True)
+    c.run("docker compose down --remove-orphans")
+    c.run("docker builder prune -f")

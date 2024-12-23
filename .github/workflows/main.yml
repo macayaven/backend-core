@@ -177,7 +177,7 @@ jobs:
 
       - name: Run Tests in Docker
         run: |
-          poetry run invoke docker.test-docker
+          poetry run invoke docker.test
         env:
           DOCKER_POSTGRES_SERVER: postgres
 
