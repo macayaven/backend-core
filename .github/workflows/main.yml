@@ -17,11 +17,9 @@ env:
   POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
   POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-  POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER }}
+  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
   FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
   FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
-  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@${{ secrets.POSTGRES_SERVER }}:${{ secrets.POSTGRES_PORT }}/${{ secrets.POSTGRES_DB }}
 
 jobs:
   dependency-review:
@@ -66,7 +64,7 @@ jobs:
 
       - name: Install Poetry
         run: pipx install poetry
-        
+
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
         with:
@@ -101,16 +99,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
-          
+
       - name: Install Poetry
         run: pipx install poetry
-        
+
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
         with:
@@ -120,12 +118,12 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-            
+
       - name: Install Dependencies with Poetry
         run: |
           poetry config virtualenvs.in-project true
           poetry install --no-interaction
-        
+
       - name: Run Code Quality Checks
         run: |
           poetry run invoke check-format
@@ -135,15 +133,30 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-24.04
     needs: [format-and-lint]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
-          
+
       - name: Install Poetry
         run: pipx install poetry
 
@@ -156,17 +169,17 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-        
+
       - name: Install Dependencies with Poetry
         run: |
           poetry config virtualenvs.in-project true
           poetry install --no-interaction
-        
-      - name: Run Tests with Coverage
+
+      - name: Run Tests in Docker
         run: |
-          poetry run invoke test
+          poetry run invoke docker.test-docker
         env:
-          POSTGRES_SERVER: localhost
+          DOCKER_POSTGRES_SERVER: postgres
 
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
@@ -177,16 +190,6 @@ jobs:
             coverage.xml
             htmlcov
             pytest.xml
-
-      - name: Test in Docker Environment
-        run: |
-          mkdir -p coverage
-          chmod 777 coverage
-          poetry run invoke test-docker
-        env:
-          TARGET: development
-          POSTGRES_SERVER: postgres
-          COVERAGE_FILE: coverage/.coverage
 
   container-scan:
     name: Container Security Scan
@@ -219,7 +222,7 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -249,25 +252,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-core:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-core:buildcache,mode=max
-          build-args: |
-            TARGET=production
-
-  deploy:
-    name: Deploy to Production
-    needs: [docker-build-and-push]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    environment: production
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

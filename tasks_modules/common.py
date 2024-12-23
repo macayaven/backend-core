@@ -1,13 +1,16 @@
-from typing import Callable, TypeVar
+from functools import wraps
+from typing import Any, Callable, TypeVar
 
 from invoke import Task
-from invoke import task as _task
-from typing_extensions import ParamSpec
 
-P = ParamSpec("P")
-R = TypeVar("R")
+F = TypeVar("F", bound=Callable[..., Any])
 
 
-def task(f: Callable[P, R]) -> Task[Callable[P, R]]:
-    """Type-annotated wrapper for invoke's task decorator."""
-    return _task(f)  # type: ignore[return-value]
+def task(func: F) -> Task:
+    """Wrap invoke.task to preserve type information."""
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return func(*args, **kwargs)
+
+    return Task(wrapper)

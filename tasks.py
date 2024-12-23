@@ -1,38 +1,27 @@
 # tasks.py
 from invoke import Collection
 
-from tasks_modules import (
-    build_docker,
-    check_format,
-    clean_docker,
-    down_db,
-    down_docker,
-    format,
-    install,
-    lint,
-    logs_docker,
-    test,
-    test_docker,
-    uninstall,
-    up_db,
-    up_docker,
-)
+from tasks_modules.docker import build_docker, clean_docker, down_docker, logs_docker, test_docker, up_db, up_docker
+from tasks_modules.format import check_format, format_code
+from tasks_modules.lint import lint_code
+from tasks_modules.test import test_code
 
-# Create the root namespace
+# Create collections
+docker = Collection("docker")
+docker.add_task(build_docker, "build")
+docker.add_task(clean_docker, "clean")
+docker.add_task(up_docker, "up")
+docker.add_task(down_docker, "down")
+docker.add_task(logs_docker, "logs")
+docker.add_task(test_docker, "test")
+docker.add_task(up_db, "up-db")
+
+# Create namespace
 ns = Collection()
+ns.add_collection(docker)
 
-# Add all tasks to the namespace
-ns.add_task(install)
-ns.add_task(uninstall)
-ns.add_task(format)
-ns.add_task(check_format)
-ns.add_task(lint)
-ns.add_task(test)
-ns.add_task(test_docker)
-ns.add_task(up_docker)
-ns.add_task(down_docker)
-ns.add_task(logs_docker)
-ns.add_task(build_docker)
-ns.add_task(clean_docker)
-ns.add_task(up_db)
-ns.add_task(down_db)
+# Add standalone tasks
+ns.add_task(format_code, "format")
+ns.add_task(check_format, "check-format")
+ns.add_task(lint_code, "lint")
+ns.add_task(test_code, "test")
