@@ -18,9 +18,10 @@ queries:
 # Paths for the analysis
 paths:
   include:
-    - "backend_core/**"       # Define the root folder of your application
-    - "alembic/**"            # Include Alembic files for analysis
-    - "core/config.py"        # Include specific files
-    - "api/v1/endpoints/**"   # Include specific subfolders
+    - "backend_core/**"       # Main application code
+    - "scripts/**"            # Utility scripts
+    - "tasks_modules/**"      # Tasks modules
   exclude:
-    - "db/migrations/**"      # Exclude specific folders
+    - "tests/**"              # Exclude test files
+    - "alembic/versions/**"   # Exclude migrations
+    - "**/__pycache__/**"     # Exclude cache files
