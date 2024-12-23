@@ -15,7 +15,11 @@ def uninstall(c: Context) -> None:
     print("Cleaning up build artifacts, caches, and virtual environments...")
 
     # Remove standard build and Python cache directories/files
-    c.run("rm -rf build/ dist/ *.egg-info .mypy_cache poetry.lock .venv .pytest_cache .ruff_cache htmlcov .coverage")
+    c.run(
+        "rm -rf build/ dist/ *.egg-info .mypy_cache poetry.lock \
+          .venv .pytest_cache .ruff_cache htmlcov .coverage \
+          *.xml"
+    )
 
     # Find and remove Python bytecode files and cache directories
     c.run("find . -type d -name '__pycache__' -exec rm -rf {} +")

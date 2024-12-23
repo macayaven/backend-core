@@ -23,11 +23,11 @@ WORKDIR /app
 COPY poetry.lock pyproject.toml /app/
 
 # Define build argument for environment
-ARG ENV=production
+ARG TARGET=production
 
 # Install dependencies with Poetry
 RUN poetry config virtualenvs.create false \
-    && if [ "$ENV" = "production" ]; then \
+    && if [ "$TARGET" = "production" ]; then \
         poetry install --no-dev --no-interaction --no-ansi; \
     else \
         poetry install --no-interaction --no-ansi; \

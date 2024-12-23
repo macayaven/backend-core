@@ -6,26 +6,25 @@ from tasks_modules.common import task as invoke_task
 
 
 @invoke_task
-def build_docker(c: Context, environment: str = "production") -> None:
+def build_docker(c: Context, target: str = "production") -> None:
     """
-    Build Docker images using the specified environment.
+    Build Docker images for the specified target.
 
     Args:
         c (Context): Invoke context.
-        environment (str): Environment to use ('production' or 'development').
+        target (str): Target to build ('production' or 'development').
     """
     clean_docker(c)
-    c.run(f"docker compose build --build-arg ENV={environment}")
+    c.run(f"docker compose build --build-arg TARGET={target}")
 
 
 @invoke_task
-def up_docker(c: Context, environment: str = "production") -> None:
+def up_docker(c: Context) -> None:
     """
-    Start Docker containers using the specified environment.
+    Start Docker containers.
 
     Args:
         c (Context): Invoke context.
-        environment (str): Environment to use ('production' or 'development').
     """
     c.run("docker compose up -d")
 
@@ -55,10 +54,10 @@ def logs_docker(c: Context) -> None:
 @invoke_task
 def test_docker(c: Context) -> None:
     """
-    Run tests inside the Docker container using the development environment.
+    Run tests inside the Docker container targeted for development.
     """
-    # Set development environment
-    build_docker(c, environment="development")
+    # Set built target
+    build_docker(c, target="development")
     down_docker(c)
 
     # Run the backend service in test mode
@@ -69,16 +68,15 @@ def test_docker(c: Context) -> None:
 
 
 @invoke_task
-def restart_docker(c: Context, environment: str = "production") -> None:
+def restart_docker(c: Context) -> None:
     """
-    Restart Docker containers using the specified environment.
+    Restart Docker containers.
 
     Args:
         c (Context): Invoke context.
-        environment (str): Environment to use ('production' or 'development').
     """
     down_docker(c)
-    up_docker(c, environment)
+    up_docker(c)
 
 
 @invoke_task

@@ -29,9 +29,6 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_EMAIL: str
     FIRST_SUPERUSER_PASSWORD: str
 
-    # Environment
-    ENVIRONMENT: str
-
     @property
     def DATABASE_URL(self) -> str:
         """Construct database URL from settings."""
