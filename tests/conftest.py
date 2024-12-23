@@ -13,9 +13,10 @@ from backend_core.main import app
 from backend_core.models.user import User
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def engine() -> Generator[Engine, None, None]:
     """Create engine for testing."""
+    print(f"Creating engine {settings.DATABASE_URL}")
     engine = create_engine(settings.DATABASE_URL)  # Use PostgreSQL database URL
     Base.metadata.create_all(bind=engine)
     yield engine
