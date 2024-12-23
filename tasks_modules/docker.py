@@ -94,7 +94,7 @@ def up_db(c: Context) -> None:
     # Wait for the PostgreSQL container to become healthy
     while True:
         result = c.run(
-            "docker inspect -f '{{ .State.Health.Status }}' backend_core-postgres-1",
+            "docker inspect -f '{{ .State.Health.Status }}' backend-core-postgres-1",
             hide=True,
             warn=True,
         )
