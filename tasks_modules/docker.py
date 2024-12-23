@@ -59,6 +59,7 @@ def test_docker(c: Context) -> None:
     """
     # Set development environment
     build_docker(c, environment="development")
+    down_docker(c)
 
     # Run the backend service in test mode
     c.run("docker compose run --rm --user $(id -u):$(id -g) backend sh -c 'POSTGRES_SERVER=postgres pytest'")
@@ -94,7 +95,7 @@ def up_db(c: Context) -> None:
     # Wait for the PostgreSQL container to become healthy
     while True:
         result = c.run(
-            "docker inspect -f '{{ .State.Health.Status }}' backend-core-postgres-1",
+            "docker inspect -f '{{ .State.Health.Status }}' $(docker compose ps -q postgres)",
             hide=True,
             warn=True,
         )
