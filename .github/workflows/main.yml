@@ -13,7 +13,6 @@ on:
       - 'docs/**'
 
 env:
-  # Default environment variables with fallbacks
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
   POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -197,7 +196,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker compose build backend && docker tag backend backend-core:${{ github.sha }}
+        run: docker compose build backend && docker tag backend-core-backend backend-core:${{ github.sha }}
+        env:
+          TARGET: production
 
       - name: Run Trivy container scan
         uses: aquasecurity/trivy-action@master
