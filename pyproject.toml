@@ -78,13 +78,18 @@ unsafe-fixes = true
 select = ["E", "F", "W"]
 ignore = ["E203"]
 
-[coverage:run]
+[tool.coverage.run]
 data_file = coverage/.coverage
 parallel = true
+source = ["backend_core"]
 
-[coverage:report]
+[tool.coverage.report]
 precision = 2
-exclude_lines =
-    pragma: no cover
-    def __repr__
-    raise NotImplementedError
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+]
+
+[tool.coverage.paths]
+source = ["backend_core"]
