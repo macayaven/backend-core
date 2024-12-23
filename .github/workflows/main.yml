@@ -90,8 +90,8 @@ jobs:
         run: poetry install --no-root
       - name: Run Lint and Format Checks
         run: |
+          poetry run invoke check-format
           poetry run invoke lint
-          poetry run invoke format-check
 
   test:
     name: Run Tests
@@ -110,7 +110,7 @@ jobs:
       - name: Install Dependencies with Poetry
         run: poetry install --no-root
       - name: Run Local Tests
-        run: poetry run invoke test-local
+        run: poetry run invoke test
       - name: Test in Docker
         run: |
           docker-compose up --build -d
