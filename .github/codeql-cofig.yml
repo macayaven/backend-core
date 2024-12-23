@@ -1,0 +1,43 @@
+name: Python CodeQL Analysis Configuration
+description: Custom configuration for analyzing a Python backend project with CodeQL.
+
+# Specify paths to include or exclude from analysis
+includes:
+  - "**/*.py"  # Analyze all Python files in the repository
+
+excludes:
+  - "tests/**"  # Exclude test files from analysis
+  - "**/__pycache__/**"  # Exclude compiled Python files
+  - "**/migrations/**"  # Exclude database migration scripts
+
+# Queries to run
+queries:
+  - python-security-and-quality.qls  # Standard security and quality queries for Python
+  - python-dependencies.qls         # Analyze dependencies
+  - +custom-queries                 # Include any custom queries in the .github/codeql folder
+
+# Enable experimental features (if necessary)
+experimental: true
+
+# Advanced configuration options
+paths:
+  source: backend_core  # Define the root folder of your application
+
+  # Optionally define specific paths for third-party code or dependencies
+  libraries:
+    - alembic/**  # Include Alembic files for analysis if needed
+    - core/config.py
+    - api/v1/endpoints/**
+
+# Database configuration (if applicable)
+database:
+  include:
+    - db/session.py
+  exclude:
+    - db/migrations/**
+
+# Optional metadata for tracking
+metadata:
+  repo_url: https://github.com/macayaven/backend-core
+  owner: macayaven
+  project: backend-core
