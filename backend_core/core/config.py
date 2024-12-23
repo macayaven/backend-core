@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     # Environment
-    ENVIRONMENT: str = "development"  # Default to production if not set
+    ENVIRONMENT: str
 
     @property
     def DATABASE_URL(self) -> str:
