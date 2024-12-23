@@ -14,6 +14,8 @@ from tasks_modules import (
     uninstall,
     up_docker,
     check_format,
+    up_db,
+    down_db,
 )
 
 # Create the root namespace
@@ -32,3 +34,5 @@ ns.add_task(down_docker)
 ns.add_task(logs_docker)
 ns.add_task(build_docker)
 ns.add_task(clean_docker)
+ns.add_task(up_db)
+ns.add_task(down_db)

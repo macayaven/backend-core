@@ -209,7 +209,7 @@ Key environment variables (defined in `.env`):
 # Server
 API_V1_STR=/api/v1
 BACKEND_CORS_ORIGINS=["http://localhost:8000"]
-PROJECT_NAME=backend_core
+PROJECT_NAME=Backend Core
 
 # Security
 SECRET_KEY=your-secret-key
