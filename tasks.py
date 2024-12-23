@@ -2,9 +2,9 @@
 from invoke import Collection
 
 from tasks_modules.docker import build_docker, clean_docker, down_docker, logs_docker, test_docker, up_db, up_docker
-from tasks_modules.format import check_format, format_code
-from tasks_modules.lint import lint_code
-from tasks_modules.test import test_code
+from tasks_modules.format import check_format, format
+from tasks_modules.lint import lint
+from tasks_modules.test import test
 
 # Create collections
 docker = Collection("docker")
@@ -21,7 +21,7 @@ ns = Collection()
 ns.add_collection(docker)
 
 # Add standalone tasks
-ns.add_task(format_code, "format")
+ns.add_task(format, "format")
 ns.add_task(check_format, "check-format")
-ns.add_task(lint_code, "lint")
-ns.add_task(test_code, "test")
+ns.add_task(lint, "lint")
+ns.add_task(test, "test")
