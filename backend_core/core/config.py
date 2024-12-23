@@ -1,6 +1,7 @@
 """Configuration management for the application."""
+
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
 
     # Security
-    SECRET_KEY: str
+    SECRET_KEY: str = "development_secret_key"  # Default for development
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ALGORITHM: str = "HS256"
 
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str] | str:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         """Validate CORS origins."""
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -33,40 +34,38 @@ class Settings(BaseSettings):
 
     # PostgreSQL Database
     POSTGRES_SERVER: str = "localhost"  # Default for local development
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_USER: str = "postgres"  # Default for development
+    POSTGRES_PASSWORD: str = "postgres"  # Default for development
+    POSTGRES_DB: str = "app"  # Default for development
     POSTGRES_PORT: str = "5432"
+    DOCKER_POSTGRES_SERVER: Optional[str] = None
 
-    # SQLAlchemy
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
-
-    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
-    def assemble_db_connection(cls, v: Optional[str], values: dict[str, any]) -> any:
-        """Assemble database connection string."""
-        if isinstance(v, str):
-            return v
-
+    @property
+    def DATABASE_URL(self) -> str:
+        """Get database URL."""
         # Override POSTGRES_SERVER if running in Docker
-        server = values.get("DOCKER_POSTGRES_SERVER", values.get("POSTGRES_SERVER"))
+        server = self.DOCKER_POSTGRES_SERVER or self.POSTGRES_SERVER
 
-        return PostgresDsn.build(
-            scheme="postgresql",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=server,
-            port=int(values.get("POSTGRES_PORT", 5432)),
-            path=f"{values.get('POSTGRES_DB') or ''}",
+        return str(
+            PostgresDsn.build(
+                scheme="postgresql",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD,
+                host=server,
+                port=int(self.POSTGRES_PORT),
+                path=f"/{self.POSTGRES_DB}",
+            )
         )
 
     # First superuser
-    FIRST_SUPERUSER_EMAIL: str
-    FIRST_SUPERUSER_PASSWORD: str
+    FIRST_SUPERUSER_EMAIL: str = "admin@example.com"  # Default for development
+    FIRST_SUPERUSER_PASSWORD: str = "admin"  # Default for development
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file=".env",
         extra="ignore",
+        env_file_encoding="utf-8",
     )
 
 
@@ -74,3 +73,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+
+# Create a settings instance for import
+settings = get_settings()
