@@ -13,6 +13,7 @@ from tasks_modules import (
     test_docker,
     uninstall,
     up_docker,
+    check_format,
 )
 
 # Create the root namespace
@@ -22,6 +23,7 @@ ns = Collection()
 ns.add_task(install)
 ns.add_task(uninstall)
 ns.add_task(format)
+ns.add_task(check_format)
 ns.add_task(lint)
 ns.add_task(test)
 ns.add_task(test_docker)
