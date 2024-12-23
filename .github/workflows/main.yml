@@ -20,28 +20,23 @@ jobs:
     permissions:
       security-events: write
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
+      - name: Install Dependencies
+        run: |
+          pip install poetry
+          poetry install --no-root
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
-          source-root: .  # Adjust the root directory
-          config-file: .github/codeql-config.yml  # Optional: Use a custom config file
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
