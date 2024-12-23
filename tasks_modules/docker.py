@@ -121,7 +121,7 @@ def down_db(c: Context) -> None:
     Args:
         c (Context): Invoke context.
     """
-    c.run("docker compose stop postgres")
+    c.run("docker compose down postgres")
 
 
 @invoke_task
