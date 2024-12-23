@@ -6,6 +6,17 @@ on:
       - main
   pull_request:
 
+env:
+  # Default environment variables for testing
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+  POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+  FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
+  FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@${{ secrets.POSTGRES_HOST }}:5432/${{ secrets.POSTGRES_DB }}
+
 jobs:
   dependency-review:
     name: Dependency Review
@@ -28,10 +39,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Poetry
+        run: pip install poetry
+
       - name: Install Dependencies
-        run: |
-          pip install poetry
-          poetry install --no-root
+        run: poetry install --no-root
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -45,13 +57,11 @@ jobs:
     name: Checkout and Setup Environment
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -77,8 +87,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
       - name: Install Poetry
         run: pip install poetry
+        
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
         with:
@@ -86,8 +103,10 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            
       - name: Install Dependencies with Poetry
         run: poetry install --no-root
+        
       - name: Run Lint and Format Checks
         run: |
           poetry run invoke check-format
@@ -96,10 +115,31 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
       - name: Install Poetry
         run: pip install poetry
+        
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
         with:
@@ -107,21 +147,27 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            
       - name: Install Dependencies with Poetry
         run: poetry install --no-root
+        
       - name: Run Local Tests
-        run: poetry run invoke test
+        
       - name: Test in Docker
-        run: |
-          docker-compose up --build -d
-          docker-compose exec backend poetry run invoke test
-          docker-compose down
+        run: poetry run invoke test-docker
 
   docker-build-and-push:
     name: Build and Push Docker Image
+    needs: [test, format-and-lint]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Install Poetry
         run: pip install poetry
@@ -150,15 +196,29 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/backend-core:latest
-          build-args: ENV=production
+          build-args: |
+            ENV=production
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
 
   run-docker-compose-services:
     name: Run Docker Compose Services
+    needs: [docker-build-and-push]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
       - name: Install Poetry
         run: pip install poetry
+        
       - name: Cache Poetry Dependencies
         uses: actions/cache@v4
         with:
@@ -166,9 +226,12 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            
       - name: Install Dependencies with Poetry
         run: poetry install --no-root
+        
       - name: Start Services
-        run: docker-compose up --build -d
+        run: docker compose -p backend_core up --build -d
+        
       - name: Stop Services
-        run: docker-compose down
+        run: docker compose -p backend_core down

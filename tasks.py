@@ -3,7 +3,9 @@ from invoke import Collection
 
 from tasks_modules import (
     build_docker,
+    check_format,
     clean_docker,
+    down_db,
     down_docker,
     format,
     install,
@@ -12,10 +14,8 @@ from tasks_modules import (
     test,
     test_docker,
     uninstall,
-    up_docker,
-    check_format,
     up_db,
-    down_db,
+    up_docker,
 )
 
 # Create the root namespace
