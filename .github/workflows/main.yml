@@ -1,179 +1,37 @@
-name: CI/CD Pipeline
+name: Python CodeQL Analysis Configuration
+description: Custom configuration for analyzing a Python backend project with CodeQL.
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+# Specify paths to include or exclude from analysis
+includes:
+  - "**/*.py"  # Analyze all Python files in the repository
 
-jobs:
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v3
+excludes:
+  - "tests/**"  # Exclude test files from analysis
+  - "**/__pycache__/**"  # Exclude compiled Python files
+  - "**/migrations/**"  # Exclude database migration scripts
 
-  codeql-analysis:
-    name: CodeQL Analysis
-    runs-on: ubuntu-24.04
-    permissions:
-      security-events: write
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+# Queries to run
+queries:
+  - python-security-and-quality.qls  # Standard security and quality queries for Python
+  - python-dependencies.qls         # Analyze dependencies
+  # Remove "+custom-queries" unless you define a folder with custom queries
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+# Paths for the analysis
+paths:
+  source: 
+    - backend_core  # Define the root folder of your application
+  include:
+    - alembic/**  # Include Alembic files for analysis
+    - core/config.py
+    - api/v1/endpoints/**
+  exclude:
+    - db/migrations/**
 
-      - name: Install Poetry
-        run: pip install poetry
+# Enable experimental features (if necessary)
+experimental: true
 
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: python
-          source-root: .  # Adjust the root directory
-          config-file: .github/codeql-config.yml  # Optional: Use a custom config file
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  checkout-and-setup:
-    name: Checkout and Setup Environment
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-  format-and-lint:
-    name: Format and Lint
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-      - name: Run Lint and Format Checks
-        run: |
-          invoke lint
-          invoke format-check
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-      - name: Run Local Tests
-        run: invoke test-local
-      - name: Test in Docker
-        run: |
-          docker-compose up --build -d
-          docker-compose exec backend invoke test
-          docker-compose down
-
-  docker-build-and-push:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend-core:latest
-          build-args: ENV=production
-
-  run-docker-compose-services:
-    name: Run Docker Compose Services
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Install Dependencies with Poetry
-        run: poetry install --no-root
-      - name: Start Services
-        run: docker-compose up --build -d
-      - name: Stop Services
-        run: docker-compose down
+# Optional metadata for tracking
+metadata:
+  repo_url: https://github.com/macayaven/backend-core
+  owner: macayaven
+  project: backend-core
