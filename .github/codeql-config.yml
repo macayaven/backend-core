@@ -6,32 +6,21 @@ includes:
   - "**/*.py"  # Analyze all Python files in the repository
 
 excludes:
-  - "tests/**"  # Exclude test files from analysis
+  - "tests/**"           # Exclude test files from analysis
   - "**/__pycache__/**"  # Exclude compiled Python files
-  - "**/migrations/**"  # Exclude database migration scripts
+  - "**/migrations/**"   # Exclude database migration scripts
 
 # Queries to run
 queries:
   - python-security-and-quality.qls  # Standard security and quality queries for Python
-  - python-dependencies.qls         # Analyze dependencies
-  # Remove "+custom-queries" unless you define a folder with custom queries
+  - python-dependencies.qls          # Dependency-related queries
 
 # Paths for the analysis
 paths:
-  source: 
-    - backend_core  # Define the root folder of your application
   include:
-    - alembic/**  # Include Alembic files for analysis
-    - core/config.py
-    - api/v1/endpoints/**
+    - "backend_core/**"       # Define the root folder of your application
+    - "alembic/**"            # Include Alembic files for analysis
+    - "core/config.py"        # Include specific files
+    - "api/v1/endpoints/**"   # Include specific subfolders
   exclude:
-    - db/migrations/**
-
-# Enable experimental features (if necessary)
-experimental: true
-
-# Optional metadata for tracking
-metadata:
-  repo_url: https://github.com/macayaven/backend-core
-  owner: macayaven
-  project: backend-core
+    - "db/migrations/**"      # Exclude specific folders
