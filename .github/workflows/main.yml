@@ -66,6 +66,16 @@ jobs:
 
       - name: Install Poetry
         run: pipx install poetry
+        
+      - name: Cache Poetry Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
 
       - name: Configure Poetry
         run: |
@@ -151,8 +161,8 @@ jobs:
         
       - name: Install Dependencies with Poetry
         run: |
-          poetry config virtualenvs.create false
-          poetry install --no-root --no-interaction
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction
         
       - name: Run Tests with Coverage
         run: |
@@ -162,6 +172,8 @@ jobs:
             --cov-report=html \
             --cov-fail-under=80 \
             --junitxml=pytest.xml
+        env:
+          PYTHONPATH: ${{ github.workspace }}
 
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
