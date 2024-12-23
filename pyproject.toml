@@ -78,18 +78,18 @@ unsafe-fixes = true
 select = ["E", "F", "W"]
 ignore = ["E203"]
 
-[tool.coverage.run]
-data_file = coverage/.coverage
-parallel = true
-source = ["backend_core"]
-
 [tool.coverage.report]
-precision = 2
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "raise NotImplementedError",
+    "raise NotImplementedError"
 ]
+precision = 2
+fail_under = 80
+show_missing = true
 
-[tool.coverage.paths]
-source = ["backend_core"]
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
