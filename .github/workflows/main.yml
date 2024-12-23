@@ -18,10 +18,11 @@ env:
   POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'postgres' }}
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'password' }}
   POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'backend_core' }}
-  POSTGRES_HOST: ${{ secrets.POSTGRES_HOST || 'localhost' }}
+  POSTGRES_SERVER: ${{ secrets.POSTGRES_SERVER || 'localhost' }}
   FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL || 'admin@example.com' }}
   FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD || 'admin' }}
-  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER || 'postgres' }}:${{ secrets.POSTGRES_PASSWORD || 'password' }}@${{ secrets.POSTGRES_HOST || 'localhost' }}:5432/${{ secrets.POSTGRES_DB || 'backend_core' }}
+  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
+  DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER || 'postgres' }}:${{ secrets.POSTGRES_PASSWORD || 'password' }}@${{ secrets.POSTGRES_SERVER || 'localhost' }}:${{ secrets.POSTGRES_PORT || '5432' }}/${{ secrets.POSTGRES_DB || 'backend_core' }}
 
 jobs:
   dependency-review:
@@ -165,9 +166,7 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           poetry run invoke test
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-          COVERAGE_FILE: coverage/.coverage
+
 
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
