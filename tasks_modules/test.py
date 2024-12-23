@@ -14,8 +14,10 @@ def test(c: Context) -> None:
 
     try:
         # Run the tests
-        c.run("poetry run pytest tests/ --cov=backend_core --cov-report=xml \
-              --cov-report=html --cov-fail-under=80 --junitxml=pytest.xml")
+        c.run(
+            "poetry run pytest tests/ --cov=backend_core --cov-report=xml \
+              --cov-report=html --cov-fail-under=80 --junitxml=pytest.xml"
+        )
     finally:
         # Stop the postgres service
         down_db(c)
