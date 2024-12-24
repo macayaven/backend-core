@@ -9,11 +9,7 @@ from backend_core.db.utils import verify_database
 # Ensure database is ready and up to date
 verify_database()
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
-)
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, openapi_url=f"{settings.API_V1_STR}/openapi.json")
 
 # Set up CORS
 app.add_middleware(

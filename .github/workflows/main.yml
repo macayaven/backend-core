@@ -133,63 +133,23 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-24.04
     needs: [format-and-lint]
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install Poetry
-        run: pipx install poetry
-
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Dependencies with Poetry
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Run tests in Docker
         run: |
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction
-
-      - name: Run Tests in Docker
-        run: |
-          poetry run invoke docker.test
+          docker compose run --rm api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
         env:
-          DOCKER_POSTGRES_SERVER: postgres
-
-      - name: Upload Coverage Reports
-        uses: actions/upload-artifact@v4
+          DOCKER_BUILDKIT: 1
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          name: coverage-reports
-          path: |
-            coverage/
-            coverage.xml
-            htmlcov
-            pytest.xml
+          file: ./coverage.xml
+          fail_ci_if_error: true
 
   container-scan:
     name: Container Security Scan

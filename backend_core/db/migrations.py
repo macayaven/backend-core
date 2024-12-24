@@ -4,7 +4,7 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 
 
 def get_alembic_config() -> Config:

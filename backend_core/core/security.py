@@ -8,7 +8,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from pydantic import EmailStr
 
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 
 # Configure CryptContext with bcrypt scheme
 pwd_context = CryptContext(schemes=["bcrypt"])

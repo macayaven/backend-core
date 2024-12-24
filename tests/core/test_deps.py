@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 from jose import jwt
 from sqlalchemy.orm import Session
 
-from backend_core.core.config import settings
 from backend_core.core.deps import decode_token, get_current_user, get_user_by_email
+from backend_core.core.settings import settings
 from backend_core.models.user import User
 
 

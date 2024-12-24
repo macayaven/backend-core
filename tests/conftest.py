@@ -10,15 +10,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from backend_core.core.config import settings
 from backend_core.core.security import get_password_hash
+from backend_core.core.settings import settings
 from backend_core.db.session import get_db
 from backend_core.db.utils import verify_database
 from backend_core.main import app
 from backend_core.models.user import User
-
-# Update settings to use test environment
-settings.update_env("test")
 
 
 def terminate_database_connections(dbname: str) -> None:

@@ -2,7 +2,7 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 from backend_core.models.user import User
 
 

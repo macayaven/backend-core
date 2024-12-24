@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, pool
 from sqlalchemy.engine import Connection
 
 from alembic import context
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 from backend_core.db.base_class import Base
 
 # this is the Alembic Config object, which provides
