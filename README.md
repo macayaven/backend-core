@@ -131,7 +131,12 @@ backend_core/
    # Edit .env with your configuration
    ```
 
-4. Start the development environment:
+4. Initialize the database and create first superuser:
+   ```bash
+   invoke setup
+   ```
+
+5. Start the development environment:
    ```bash
    invoke docker.up  # Starts all services
    # OR
@@ -142,26 +147,29 @@ backend_core/
 
 The project uses [Invoke](http://www.pyinvoke.org/) for task management. Here are the main tasks:
 
-#### Code Quality
-```bash
-invoke format          # Format code with black and isort
-invoke check-format    # Check code formatting
-invoke lint           # Run all linters (ruff, mypy)
-```
+- **Setup**:
+  - `invoke setup`: Initialize database, run migrations, and create first superuser
+  - `invoke docker.up-db`: Start only the database container
+  - `invoke docker.up`: Start all services in Docker
 
-#### Testing
-```bash
-invoke test           # Run tests locally
-invoke docker.test    # Run tests in Docker environment
-```
+- **Development**:
+  - `invoke local.dev`: Start local development server
+  - `invoke local.shell`: Open Python shell with project context
+  - `invoke docker.logs`: View Docker container logs
 
-#### Docker Operations
-```bash
-invoke docker.build   # Build Docker images
-invoke docker.up      # Start all services
-invoke docker.down    # Stop all services
-invoke docker.logs    # View service logs
-```
+- **Testing**:
+  - `invoke test`: Run tests with coverage
+  - `invoke local.test`: Run tests in local environment
+  - `invoke docker.test`: Run tests in Docker environment
+
+- **Code Quality**:
+  - `invoke quality.format`: Format code with Black
+  - `invoke quality.check-format`: Check code formatting
+  - `invoke quality.lint`: Run linting tools
+
+- **Cleanup**:
+  - `invoke local.clean`: Clean local development environment
+  - `invoke docker.clean`: Clean Docker development environment
 
 ### Testing
 

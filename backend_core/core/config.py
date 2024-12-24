@@ -1,9 +1,10 @@
 """Configuration management for the application."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import List, Optional, Union
 
-from pydantic import AnyHttpUrl, PostgresDsn, field_validator
+from pydantic import AnyHttpUrl, Field, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,8 +16,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Backend Core"
     VERSION: str = "0.1.0"
 
+    # Environment
+    TARGET: str = "development"
+    ENV_FILE: Optional[str] = None
+
     # Security
-    SECRET_KEY: str = "development_secret_key"  # Default for development
+    SECRET_KEY: str = Field(..., alias="SECRET_KEY")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ALGORITHM: str = "HS256"
 
@@ -33,46 +38,51 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # PostgreSQL Database
-    POSTGRES_SERVER: str = "localhost"  # Default for local development
-    POSTGRES_USER: str = "postgres"  # Default for development
-    POSTGRES_PASSWORD: str = "postgres"  # Default for development
-    POSTGRES_DB: str = "app"  # Default for development
-    POSTGRES_PORT: str = "5432"
-    DOCKER_POSTGRES_SERVER: Optional[str] = None
+    POSTGRES_SERVER: str = Field(..., alias="POSTGRES_SERVER")
+    POSTGRES_USER: str = Field(..., alias="POSTGRES_USER")
+    POSTGRES_PASSWORD: str = Field(..., alias="POSTGRES_PASSWORD")
+    POSTGRES_DB: str = Field(..., alias="POSTGRES_DB")
+    POSTGRES_PORT: str = Field(..., alias="POSTGRES_PORT")
 
     @property
     def DATABASE_URL(self) -> str:
         """Get database URL."""
-        # Override POSTGRES_SERVER if running in Docker
-        server = self.DOCKER_POSTGRES_SERVER or self.POSTGRES_SERVER
-
         return str(
             PostgresDsn.build(
                 scheme="postgresql",
                 username=self.POSTGRES_USER,
                 password=self.POSTGRES_PASSWORD,
-                host=server,
+                host=self.POSTGRES_SERVER,
                 port=int(self.POSTGRES_PORT),
                 path=self.POSTGRES_DB,
             )
         )
 
     # First superuser
-    FIRST_SUPERUSER_EMAIL: str = "admin@example.com"  # Default for development
-    FIRST_SUPERUSER_PASSWORD: str = "admin"  # Default for development
+    FIRST_SUPERUSER: str = Field(..., alias="FIRST_SUPERUSER")
+    FIRST_SUPERUSER_PASSWORD: str = Field(..., alias="FIRST_SUPERUSER_PASSWORD")
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
-        env_file=".env.test" if __name__ == "tests.conftest" else ".env",
+        env_file=".env",
         extra="ignore",
         env_file_encoding="utf-8",
     )
+
+    def update_env(self, target: str) -> None:
+        """Update environment settings."""
+        self.TARGET = target
+        env_file = Path(f".env.{target}")
+        if env_file.exists():
+            self.ENV_FILE = str(env_file)
+            self.model_config["env_file"] = str(env_file)
+            self.model_validate({})
 
 
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 # Create a settings instance for import

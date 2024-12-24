@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend_core.core.security import get_password_hash
 from backend_core.db.base_class import Base
+from backend_core.db.migrations import run_migrations
 from backend_core.db.session import SessionLocal
 
 ModelType = TypeVar("ModelType", bound=Base)
@@ -79,18 +80,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return obj
 
 
-def check_database_connection() -> bool:
+def verify_database() -> bool:
     """
-    Check if database connection is working.
+    Check if database connection is working and run migrations.
 
     Returns:
-        bool: True if connection is successful, False otherwise
+        bool: True if connection is successful and migrations run, False otherwise
     """
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
+        # Run migrations
+        run_migrations()
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Database verification failed: {e}")
         return False
     finally:
         db.close()

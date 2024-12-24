@@ -1,4 +1,6 @@
 # backend_core/core/security.py
+"""Security utilities."""
+
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -8,7 +10,8 @@ from pydantic import EmailStr
 
 from backend_core.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configure CryptContext with bcrypt scheme
+pwd_context = CryptContext(schemes=["bcrypt"])
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

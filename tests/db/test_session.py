@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from backend_core.core.security import get_password_hash
 from backend_core.db.session import get_db
-from backend_core.db.utils import check_database_connection
+from backend_core.db.utils import verify_database
 from backend_core.models.user import User
 
 
@@ -38,7 +38,6 @@ def test_db_session_context(client: "TestClient", db_session: Session) -> None:
     assert queried_user.email == "session_test@example.com"
 
 
-def test_database_connection(client: "TestClient") -> None:
-    """Test database connection is working."""
-
-    assert check_database_connection() is True
+def test_database_connection() -> None:
+    """Test database connection."""
+    assert verify_database() is True

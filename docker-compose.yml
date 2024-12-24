@@ -1,43 +1,25 @@
-name: backend-core
+version: '3.8'
+
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: ${TARGET:-development}
-    image: macayaven/backend-core:${TARGET:-development}
+  api:
+    build: .
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend_core:/opt/pysetup/backend_core
-      - ./tests:/opt/pysetup/tests
-      - ./alembic.ini:/opt/pysetup/alembic.ini
-      - ./pyproject.toml:/opt/pysetup/pyproject.toml
-      - ./poetry.lock:/opt/pysetup/poetry.lock
-      - ./.env.test:/opt/pysetup/.env.test
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - ENV_FILE=.env.test
-      - DOCKER_POSTGRES_SERVER=postgres
     env_file:
       - .env.test
-    command: uvicorn backend_core.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - db
 
-  postgres:
+  db:
     image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test_db
     ports:
       - "5432:5432"
-    env_file:
-      - .env.test
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
 volumes:
   postgres_data:

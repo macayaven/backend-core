@@ -62,7 +62,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
@@ -103,7 +103,7 @@ jobs:
       - name: Run Tests
         run: poetry run invoke test
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
           SECRET_KEY: test_secret_key
           FIRST_SUPERUSER_EMAIL: admin@example.com
           FIRST_SUPERUSER_PASSWORD: admin
