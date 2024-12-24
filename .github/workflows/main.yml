@@ -142,6 +142,7 @@ jobs:
       - name: Run tests in Docker
         run: |
           docker compose run --rm api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
+          docker cp $(docker ps -aqf "name=backend_core-api-run-")/app/coverage.xml .
         env:
           DOCKER_BUILDKIT: 1
       

@@ -46,7 +46,7 @@ def check(ctx: Context) -> None:
 @task
 def test(ctx: Context) -> None:
     """Run tests in dockerized environment."""
-    ctx.run("docker compose run --rm api poetry run pytest tests/ -v")
+    ctx.run("docker compose run --rm api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml")
 
 
 @task
