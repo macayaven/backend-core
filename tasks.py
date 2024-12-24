@@ -3,7 +3,7 @@
 import shutil
 from pathlib import Path
 
-from invoke import Context, task
+from invoke import Context, Result, task
 
 
 @task
@@ -84,8 +84,8 @@ def clean(ctx: Context) -> None:
     project_name = Path.cwd().name.lower()
 
     # Find and remove project containers
-    result = ctx.run("docker ps -a --format '{{.Names}}'", hide=True)
-    if result.ok:
+    result: Result = ctx.run("docker ps -a --format '{{.Names}}'", hide=True, warn=True)  # type: ignore
+    if result and result.ok:
         containers = result.stdout.splitlines()
         project_containers = [c for c in containers if project_name in c.lower()]
         if project_containers:
@@ -93,8 +93,8 @@ def clean(ctx: Context) -> None:
             ctx.run(f"docker rm -f {' '.join(project_containers)}", warn=True)
 
     # Find and remove project images
-    result = ctx.run("docker images --format '{{.Repository}}:{{.Tag}}'", hide=True)
-    if result.ok:
+    result = ctx.run("docker images --format '{{.Repository}}:{{.Tag}}'", hide=True, warn=True)  # type: ignore
+    if result and result.ok:
         images = result.stdout.splitlines()
         project_images = [i for i in images if project_name in i.lower()]
         if project_images:
@@ -102,8 +102,8 @@ def clean(ctx: Context) -> None:
             ctx.run(f"docker rmi -f {' '.join(project_images)}", warn=True)
 
     # Find and remove project volumes
-    result = ctx.run("docker volume ls --format '{{.Name}}'", hide=True)
-    if result.ok:
+    result = ctx.run("docker volume ls --format '{{.Name}}'", hide=True, warn=True)  # type: ignore
+    if result and result.ok:
         volumes = result.stdout.splitlines()
         project_volumes = [v for v in volumes if project_name in v.lower()]
         if project_volumes:
@@ -111,8 +111,8 @@ def clean(ctx: Context) -> None:
             ctx.run(f"docker volume rm -f {' '.join(project_volumes)}", warn=True)
 
     # Find and remove project networks
-    result = ctx.run("docker network ls --format '{{.Name}}'", hide=True)
-    if result.ok:
+    result = ctx.run("docker network ls --format '{{.Name}}'", hide=True, warn=True)  # type: ignore
+    if result and result.ok:
         networks = result.stdout.splitlines()
         project_networks = [n for n in networks if project_name in n.lower() and n != "bridge" and n != "host"]
         if project_networks:
