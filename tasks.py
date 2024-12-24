@@ -22,10 +22,25 @@ def format(ctx: Context) -> None:
 
 
 @task
+def check_format(ctx: Context) -> None:
+    """Check code formatting without making changes."""
+    print("Checking code formatting...")
+    ctx.run("black --check .")
+    ctx.run("isort --check-only .")
+
+
+@task
 def lint(ctx: Context) -> None:
     """Run linting tools."""
     ctx.run("ruff check .")
     ctx.run("mypy .")
+
+
+@task
+def check(ctx: Context) -> None:
+    """Run all code quality checks."""
+    check_format(ctx)
+    lint(ctx)
 
 
 @task

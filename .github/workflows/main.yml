@@ -126,7 +126,7 @@ jobs:
 
       - name: Run Code Quality Checks
         run: |
-          poetry run invoke check-format
+          poetry run invoke check
           poetry run invoke lint
 
   test:
