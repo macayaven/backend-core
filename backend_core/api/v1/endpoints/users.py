@@ -1,4 +1,5 @@
-# backend_core/api/v1/endpoints/users.py
+"""User endpoints."""
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -20,11 +21,14 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Create new user
+    now = datetime.now(timezone.utc)
     user = User()
     user.email = user_in.email
     user.hashed_password = get_password_hash(user_in.password)
     user.first_name = user_in.first_name
     user.last_name = user_in.last_name
+    user.created_at = now
+    user.updated_at = now
 
     db.add(user)
     db.commit()
@@ -54,6 +58,7 @@ def update_user_me(
     if user_in.last_name is not None:
         current_user.last_name = user_in.last_name
 
+    current_user.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(current_user)
     return current_user

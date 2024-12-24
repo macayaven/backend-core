@@ -18,7 +18,11 @@ var/
 .installed.cfg
 *.egg
 .env
-.venv
+.venv/
 venv/
 ENV/
 env/
+.ruff_cache/
+.mypy_cache/
+.alembic_cache/
+

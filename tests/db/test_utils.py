@@ -6,6 +6,7 @@ from backend_core.core.security import get_password_hash, verify_password
 from backend_core.db.utils import CRUDBase
 from backend_core.models.user import User
 from backend_core.schemas.user import UserCreate, UserUpdate
+from datetime import datetime, timezone
 
 
 class TestCRUDBase:
@@ -16,12 +17,15 @@ class TestCRUDBase:
         crud = CRUDBase[User, UserCreate, UserUpdate](User)
 
         # Create a user by setting attributes directly
+        now = datetime.now(timezone.utc)
         user = User()
         user.id = uuid4()
         user.email = "get_test@example.com"
         user.hashed_password = get_password_hash("testpass")
         user.first_name = "Test"
         user.last_name = "User"
+        user.created_at = now
+        user.updated_at = now
 
         db_session.add(user)
         db_session.commit()
@@ -37,6 +41,7 @@ class TestCRUDBase:
         crud = CRUDBase[User, UserCreate, UserUpdate](User)
 
         # Create multiple users
+        now = datetime.now(timezone.utc)
         users = []
         for i in range(3):
             user = User()
@@ -45,6 +50,8 @@ class TestCRUDBase:
             user.hashed_password = get_password_hash("testpass")
             user.first_name = f"Test{i}"
             user.last_name = "User"
+            user.created_at = now
+            user.updated_at = now
             users.append(user)
             db_session.add(user)
 
@@ -72,18 +79,23 @@ class TestCRUDBase:
         assert hasattr(user, "hashed_password")
         assert not hasattr(user, "password")
         assert verify_password("testpass", user.hashed_password)
+        assert user.created_at is not None
+        assert user.updated_at is not None
 
     def test_update(self, db_session: Session) -> None:
         """Test updating a record."""
         crud = CRUDBase[User, UserCreate, UserUpdate](User)
 
         # Create initial user
+        now = datetime.now(timezone.utc)
         user = User()
         user.id = uuid4()
         user.email = f"update_test_{uuid4()}@example.com"
         user.hashed_password = get_password_hash("testpass")
         user.first_name = "Test"
         user.last_name = "User"
+        user.created_at = now
+        user.updated_at = now
 
         db_session.add(user)
         db_session.commit()
@@ -104,12 +116,15 @@ class TestCRUDBase:
         crud = CRUDBase[User, UserCreate, UserUpdate](User)
 
         # Create initial user
+        now = datetime.now(timezone.utc)
         user = User()
         user.id = uuid4()
         user.email = f"update_dict_test_{uuid4()}@example.com"
         user.hashed_password = get_password_hash("testpass")
         user.first_name = "Test"
         user.last_name = "User"
+        user.created_at = now
+        user.updated_at = now
 
         db_session.add(user)
         db_session.commit()
@@ -129,10 +144,13 @@ class TestCRUDBase:
         crud = CRUDBase[User, UserCreate, UserUpdate](User)
 
         # Create initial user
+        now = datetime.now(timezone.utc)
         user = User()
         user.id = uuid4()
         user.email = f"remove_test_{uuid4()}@example.com"
         user.hashed_password = get_password_hash("testpass")
+        user.created_at = now
+        user.updated_at = now
 
         db_session.add(user)
         db_session.commit()

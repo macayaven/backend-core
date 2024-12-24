@@ -1,6 +1,8 @@
 """Test configuration and fixtures."""
 
+from datetime import datetime, timedelta, timezone
 from typing import Generator
+import time
 
 import psycopg2
 import pytest
@@ -11,11 +13,32 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend_core.core.security import get_password_hash
-from backend_core.core.settings import settings
+from backend_core.core.settings import get_settings, settings
 from backend_core.db.session import get_db
-from backend_core.db.utils import verify_database
+from backend_core.db.migrations import run_migrations
 from backend_core.main import app
 from backend_core.models.user import User
+
+
+def wait_for_database(max_retries: int = 30, retry_interval: float = 1.0) -> None:
+    """Wait for the database to be ready."""
+    retries = 0
+    while retries < max_retries:
+        try:
+            conn = psycopg2.connect(
+                dbname="postgres",
+                user=settings.POSTGRES_USER,
+                password=settings.POSTGRES_PASSWORD,
+                host=settings.POSTGRES_SERVER,
+                port=settings.POSTGRES_PORT,
+            )
+            conn.close()
+            return
+        except psycopg2.OperationalError:
+            retries += 1
+            time.sleep(retry_interval)
+    
+    raise Exception(f"Database not ready after {max_retries} retries")
 
 
 def terminate_database_connections(dbname: str) -> None:
@@ -48,40 +71,46 @@ def terminate_database_connections(dbname: str) -> None:
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db() -> None:
     """Set up test database and run migrations."""
-    # Store original database name
-    original_db = settings.POSTGRES_DB
+    # Wait for the database to be ready
+    wait_for_database()
 
-    # Terminate existing connections to the test database
-    terminate_database_connections(original_db)
+    # Connect to postgres database to create/drop test database
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user=settings.POSTGRES_USER,
+        password=settings.POSTGRES_PASSWORD,
+        host=settings.POSTGRES_SERVER,
+        port=settings.POSTGRES_PORT,
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
 
-    # Connect to default postgres database to create/drop test database
-    temp_db_url = str(settings.DATABASE_URL).replace(original_db, "postgres")
-    engine = create_engine(temp_db_url)
-
-    with engine.connect() as conn:
-        conn.execute(text("COMMIT"))  # Close any open transactions
-        conn.execute(text(f"DROP DATABASE IF EXISTS {original_db}"))
-        conn.execute(text(f"CREATE DATABASE {original_db}"))
+    try:
+        # Drop test database if it exists
+        terminate_database_connections(settings.POSTGRES_DB)
+        cur.execute(f"DROP DATABASE IF EXISTS {settings.POSTGRES_DB}")
+        # Create test database
+        cur.execute(f"CREATE DATABASE {settings.POSTGRES_DB}")
+    finally:
+        cur.close()
+        conn.close()
 
     # Run migrations on test database
-    verify_database()
+    run_migrations()
+
+
+@pytest.fixture(scope="session")
+def engine() -> Engine:
+    """Create database engine for testing."""
+    return create_engine(settings.DATABASE_URL, pool_pre_ping=True)
 
 
 @pytest.fixture
-def engine() -> Generator[Engine, None, None]:
-    """Create engine for testing."""
-    test_db_url = str(settings.DATABASE_URL)
-    engine = create_engine(test_db_url)
-    yield engine
-
-
-@pytest.fixture(autouse=True)
 def db_session(engine: Engine) -> Generator[Session, None, None]:
     """Create a fresh database session for each test."""
     connection = engine.connect()
     transaction = connection.begin()
-    Session = sessionmaker(bind=connection)
-    session = Session()
+    session = Session(bind=connection)
 
     yield session
 
@@ -93,12 +122,8 @@ def db_session(engine: Engine) -> Generator[Session, None, None]:
 @pytest.fixture
 def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Create FastAPI test client."""
-
     def override_get_db() -> Generator[Session, None, None]:
-        try:
-            yield db_session
-        finally:
-            pass
+        yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
@@ -109,11 +134,14 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 @pytest.fixture
 def test_user(db_session: Session) -> User:
     """Create a test user."""
-    user = User()
-    user.email = "test@example.com"
-    user.hashed_password = get_password_hash("password")  # Hash the password properly
-    user.is_active = True
-    user.is_superuser = False
+    now = datetime.now(timezone.utc)
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("password"),
+        is_superuser=False,
+        created_at=now,
+        updated_at=now,
+    )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -127,6 +155,8 @@ def token_headers(client: TestClient, test_user: User) -> dict[str, str]:
         "username": test_user.email,
         "password": "password",
     }
-    response = client.post("/api/v1/auth/login", data=login_data)
-    token = response.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    response = client.post(f"{settings.API_V1_STR}/auth/login", data=login_data)
+    tokens = response.json()
+    a_token = tokens["access_token"]
+    headers = {"Authorization": f"Bearer {a_token}"}
+    return headers

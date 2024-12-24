@@ -37,11 +37,11 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # PostgreSQL Database
-    POSTGRES_SERVER: str = Field(..., alias="POSTGRES_SERVER")
-    POSTGRES_USER: str = Field(..., alias="POSTGRES_USER")
-    POSTGRES_PASSWORD: str = Field(..., alias="POSTGRES_PASSWORD")
-    POSTGRES_DB: str = Field(..., alias="POSTGRES_DB")
-    POSTGRES_PORT: str = Field(..., alias="POSTGRES_PORT")
+    POSTGRES_SERVER: str = Field(default="localhost", alias="POSTGRES_SERVER")
+    POSTGRES_USER: str = Field(default="postgres", alias="POSTGRES_USER")
+    POSTGRES_PASSWORD: str = Field(default="postgres", alias="POSTGRES_PASSWORD")
+    POSTGRES_DB: str = Field(default="test_db", alias="POSTGRES_DB")
+    POSTGRES_PORT: str = Field(default="5432", alias="POSTGRES_PORT")
 
     @property
     def DATABASE_URL(self) -> str:
@@ -62,10 +62,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str = Field(..., alias="FIRST_SUPERUSER_PASSWORD")
 
     model_config = SettingsConfigDict(
-        case_sensitive=True,
-        env_file=".env.test" if Path(".env.test").exists() else ".env",
-        extra="ignore",
+        env_file=".env",
         env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
     )
 
 

@@ -141,8 +141,14 @@ jobs:
       
       - name: Run tests in Docker
         run: |
-          docker compose run --rm api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
-          docker cp $(docker ps -aqf "name=backend_core-api-run-")/app/coverage.xml .
+          # Run tests without --rm to keep container for copying files
+          docker compose run api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
+          # Get the container ID of the last run
+          CONTAINER_ID=$(docker ps -alq)
+          # Copy coverage file from container
+          docker cp $CONTAINER_ID:/app/coverage.xml .
+          # Now remove the container
+          docker rm $CONTAINER_ID
         env:
           DOCKER_BUILDKIT: 1
       

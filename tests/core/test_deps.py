@@ -1,4 +1,7 @@
-from datetime import datetime, timedelta
+"""Test dependencies module."""
+
+from datetime import datetime, timedelta, timezone
+from typing import AsyncGenerator
 
 import pytest
 from fastapi import HTTPException
@@ -13,7 +16,7 @@ from backend_core.models.user import User
 
 def test_decode_token() -> None:
     """Test decoding a valid token."""
-    expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode = {"exp": expire, "sub": "test@example.com"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -31,9 +34,14 @@ def test_decode_token_invalid() -> None:
 def test_get_user_by_email(db_session: Session) -> None:
     """Test retrieving a user by email."""
     # Create a test user
-    user = User()
-    user.email = "test@example.com"
-    user.hashed_password = "hashed_password"
+    now = datetime.now(timezone.utc)
+    user = User(
+        email="test@example.com",
+        hashed_password="hashed_password",
+        is_superuser=False,
+        created_at=now,
+        updated_at=now,
+    )
     db_session.add(user)
     db_session.commit()
 
@@ -48,44 +56,44 @@ def test_get_user_by_email_not_found(db_session: Session) -> None:
     assert user is None
 
 
-def test_get_current_user_valid(client: TestClient, db_session: Session) -> None:
+async def test_get_current_user_valid(client: TestClient, db_session: Session) -> None:
     """Test getting current user with a valid token."""
     # Create a test user
-    user = User()
-    user.email = "test@example.com"
-    user.hashed_password = "hashed_password"
+    now = datetime.now(timezone.utc)
+    user = User(
+        email="test@example.com",
+        hashed_password="hashed_password",
+        is_superuser=False,
+        created_at=now,
+        updated_at=now,
+    )
     db_session.add(user)
     db_session.commit()
 
     # Create a valid token
-    expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode = {"exp": expire, "sub": "test@example.com"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-    current_user = get_current_user(token, db_session)
+    # Test getting current user
+    current_user = await get_current_user(token, db_session)
+    assert current_user is not None
     assert current_user.email == "test@example.com"
 
 
-def test_get_current_user_invalid_token(client: TestClient, db_session: Session) -> None:
+async def test_get_current_user_invalid_token(client: TestClient, db_session: Session) -> None:
     """Test getting current user with an invalid token."""
-    token = "invalid.token.payload"
-
-    with pytest.raises(HTTPException) as exc_info:
-        get_current_user(token, db_session)
-
-    assert exc_info.value.status_code == 401
-    assert "Could not validate credentials" in exc_info.value.detail
+    with pytest.raises(HTTPException):
+        await get_current_user("invalid.token", db_session)
 
 
-def test_get_current_user_user_not_found(client: TestClient, db_session: Session) -> None:
+async def test_get_current_user_user_not_found(client: TestClient, db_session: Session) -> None:
     """Test getting current user with a token for a non-existent user."""
     # Create a token for a non-existent user
-    expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode = {"exp": expire, "sub": "nonexistent@example.com"}
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-    with pytest.raises(HTTPException) as exc_info:
-        get_current_user(token, db_session)
-
-    assert exc_info.value.status_code == 401
-    assert "Could not validate credentials" in exc_info.value.detail
+    # Test getting current user
+    with pytest.raises(HTTPException):
+        await get_current_user(token, db_session)

@@ -14,7 +14,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
     PYSETUP_PATH="/app" \
-    VENV_PATH="/app/.venv"
+    VENV_PATH="/app/.venv" \
+    DOCKER_CONTAINER=1
 
 # Add Poetry and venv to PATH
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
@@ -41,6 +42,7 @@ COPY backend_core backend_core/
 COPY alembic alembic/
 COPY alembic.ini ./
 COPY tests tests/
+COPY tasks.py ./
 
 # Install the project itself
 RUN poetry install
