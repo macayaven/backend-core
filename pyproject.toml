@@ -50,6 +50,17 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 check_untyped_defs = true
+install_types = true
+non_interactive = true
+
+[[tool.mypy.overrides]]
+module = [
+    "passlib.*",
+    "jose.*",
+    "invoke.*",
+    "psycopg2.*"
+]
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
