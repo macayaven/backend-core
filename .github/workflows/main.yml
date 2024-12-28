@@ -142,7 +142,7 @@ jobs:
       - name: Run tests in Docker
         run: |
           # Run tests without --rm to keep container for copying files
-          docker compose run api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
+          docker compose run test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
           # Get the container ID of the last run
           CONTAINER_ID=$(docker ps -alq)
           # Copy coverage file from container
@@ -166,7 +166,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker compose build backend && docker tag backend-core-backend backend-core:${{ github.sha }}
+        run: docker compose build api && docker tag backend-core-backend backend-core:${{ github.sha }}
         env:
           TARGET: production
 
