@@ -142,7 +142,7 @@ jobs:
       - name: Run tests in Docker
         run: |
           # Run tests without --rm to keep container for copying files
-          docker compose run test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
+          docker compose --env-file .env.test run test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
           # Get the container ID of the last run
           CONTAINER_ID=$(docker ps -alq)
           # Copy coverage file from container
