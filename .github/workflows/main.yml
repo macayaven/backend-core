@@ -155,9 +155,10 @@ jobs:
           DOCKER_BUILDKIT: 1
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: macayaven/backend-core
           fail_ci_if_error: true
 
   container-scan:
