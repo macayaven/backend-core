@@ -15,9 +15,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Backend Core"
     VERSION: str = "0.1.0"
 
-    # Environment
-    TARGET: str = "development"
-
     # Security
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

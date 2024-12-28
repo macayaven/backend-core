@@ -171,11 +171,9 @@ jobs:
       - name: Build Docker image
         run: |
           cp .env.test .env
-          docker compose build api
-          docker tag backend-core-api:latest backend-core
+          docker compose build prod
+          docker tag backend-core-prod:latest backend-core
           docker tag backend-core backend-core:${{ github.sha }}
-        env:
-          TARGET: production
 
       - name: Run Trivy container scan
         uses: aquasecurity/trivy-action@master
@@ -189,7 +187,6 @@ jobs:
   docker-build-and-push:
     name: Build and Push Docker Image
     needs: [test, container-scan]
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

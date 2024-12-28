@@ -44,7 +44,3 @@ COPY alembic.ini ./
 COPY tests tests/
 COPY tasks.py ./
 COPY pytest.ini ./
-
-# Start command
-ENTRYPOINT ["poetry", "run"]
-CMD ["uvicorn", "backend_core.main:app", "--host", "0.0.0.0", "--port", "8000"]
