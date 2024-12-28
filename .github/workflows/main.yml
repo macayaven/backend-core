@@ -20,6 +20,8 @@ env:
 jobs:
   dependency-review:
     name: Dependency Review
+    # Only run this job for pull requests
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
