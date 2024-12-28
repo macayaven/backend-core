@@ -171,8 +171,8 @@ jobs:
       - name: Build Docker image
         run: |
           cp .env.test .env
-          docker compose build api
-          docker tag backend-core-backend backend-core:${{ github.sha }}
+          docker compose build api --name backend-core
+          docker tag backend-core backend-core:${{ github.sha }}
         env:
           TARGET: production
 
