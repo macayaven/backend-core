@@ -17,10 +17,9 @@ pydantic = {extras = ["email"], version = "^2.10.4"}
 pydantic-settings = "^2.7.0"
 sqlalchemy = "^2.0.36"
 alembic = "^1.14.0"
-python-dotenv = "^1.0.1"
 psycopg2-binary = "^2.9.10"
 invoke = "^2.2.0"
-
+bcrypt = "^4.2.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
@@ -30,7 +29,6 @@ pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 pytest-asyncio = "^0.25.0"
 httpx = "^0.28.1"
-autoflake = "^2.3.1"
 ruff = "^0.3.4"
 
 [build-system]
@@ -52,28 +50,30 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 check_untyped_defs = true
-explicit_package_bases = true
-exclude = ".venv|build|dist|.*\\.egg-info"
 install_types = true
 non_interactive = true
-namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = [
-    "pydantic_settings.*",
-    "fastapi.*",
-    "jose.*",
     "passlib.*",
-    "sqlalchemy.*",
+    "jose.*",
+    "invoke.*",
+    "psycopg2.*"
 ]
 ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-exclude = [".venv", "build", "dist", "*.egg-info"]
-unsafe-fixes = true
 
-[tool.ruff.lint]
-select = ["E", "F", "W"]
-ignore = ["E203"]
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+addopts = "-v --cov=backend_core --cov-report=xml"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*:",
+    "ignore::DeprecationWarning:jose.*:"
+]
+
+[tool.pytest-asyncio]
+default_fixture_scope = "function"

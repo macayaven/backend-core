@@ -1,8 +1,9 @@
 # tests/api/v1/test_users.py
+
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 from backend_core.models.user import User
 
 
@@ -34,7 +35,7 @@ def test_read_current_user(client: TestClient, test_user: User, token_headers: d
     response = client.get(f"{settings.API_V1_STR}/users/me", headers=token_headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["email"] == test_user.email  # Compare with the actual test user email
+    assert data["email"] == test_user.email
     assert "password" not in data
     assert data["first_name"] == test_user.first_name
     assert data["last_name"] == test_user.last_name

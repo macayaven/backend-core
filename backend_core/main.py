@@ -1,11 +1,13 @@
 # backend_core/main.py
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from backend_core.api.v1.api import api_router
-from backend_core.core.config import settings
-from backend_core.db.utils import check_database_connection
+from backend_core.core.settings import settings
+from backend_core.db.utils import verify_database
+
+# Ensure database is ready and up to date
+verify_database()
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, openapi_url=f"{settings.API_V1_STR}/openapi.json")
 
@@ -31,11 +33,5 @@ def root() -> dict[str, str]:
 @app.get("/health")
 def health_check() -> dict[str, str]:
     """Health check endpoint."""
-    db_status = "healthy" if check_database_connection() else "unhealthy"
+    db_status = "healthy" if verify_database() else "unhealthy"
     return {"status": "ok", "database": db_status, "version": settings.VERSION}
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Global exception handler."""
-    return JSONResponse(status_code=500, content={"detail": "Internal server error", "path": request.url.path})

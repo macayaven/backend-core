@@ -2,13 +2,13 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 
-from backend_core.core.config import settings
+from backend_core.core.settings import settings
 from backend_core.models.user import User
 
 
 def test_login_success(client: TestClient, test_user: User) -> None:
     """Test successful login."""
-    login_data = {"username": test_user.email, "password": "testpassword"}
+    login_data = {"username": test_user.email, "password": "password"}  # Changed from testpassword to password
     response = client.post(
         f"{settings.API_V1_STR}/auth/login", data=login_data  # Note: using data instead of json for form data
     )

@@ -50,3 +50,5 @@ logs/
 Thumbs.db
 
 .ruff_cache/
+coverage.xml
+pytest.xml

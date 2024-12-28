@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from backend_core.core.config import settings
 from backend_core.core.security import create_access_token, verify_password
+from backend_core.core.settings import settings
 from backend_core.db.session import get_db
 from backend_core.models.user import User
 from backend_core.schemas.token import Token

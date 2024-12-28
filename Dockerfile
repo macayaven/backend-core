@@ -1,50 +1,46 @@
-FROM python:3.12-slim AS base
+# syntax=docker/dockerfile:1
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=1.8.2
+# Base image with Python and Poetry
+FROM python:3.12-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
+# Python/Poetry environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VERSION=1.7.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1 \
+    PYSETUP_PATH="/app" \
+    VENV_PATH="/app/.venv" \
+    DOCKER_CONTAINER=1
+
+# Add Poetry and venv to PATH
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+
+# Set up working directory
+WORKDIR $PYSETUP_PATH
+
+# Install system dependencies and Poetry
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
     curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
-
-# Set working directory
-WORKDIR /app
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
 
 # Copy dependency files
-COPY poetry.lock pyproject.toml /app/
+COPY pyproject.toml poetry.lock ./
 
-# Define build argument for environment
-ARG ENV=production
-
-# Install dependencies with Poetry
-RUN poetry config virtualenvs.create false \
-    && if [ "$ENV" = "production" ]; then \
-        poetry install --no-dev --no-interaction --no-ansi; \
-    else \
-        poetry install --no-interaction --no-ansi; \
-    fi
+# Install all dependencies including test dependencies
+RUN poetry install --no-root
 
 # Copy application code
-COPY . /app
-
-# Create a non-root user and group
-RUN groupadd app && useradd -m -g app appuser
-
-# Adjust file permissions
-RUN chown -R appuser:app /app
-USER appuser
-
-# Expose application port
-EXPOSE 8000
-
-# Set default command
-CMD ["uvicorn", "backend_core.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY backend_core backend_core/
+COPY alembic alembic/
+COPY alembic.ini ./
+COPY tests tests/
+COPY tasks.py ./
+COPY pytest.ini ./

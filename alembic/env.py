@@ -1,56 +1,95 @@
-from datetime import datetime
-from typing import Any
+"""Alembic environment configuration."""
 
-from sqlalchemy import DateTime, MetaData, inspect
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy.orm import Mapped, mapped_column
+from logging.config import fileConfig
+
+from sqlalchemy import create_engine, pool
+from sqlalchemy.engine import Connection
+
+from alembic import context
+from backend_core.core.settings import settings
+from backend_core.db.base_class import Base
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+target_metadata = Base.metadata
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
 
 
-@as_declarative(metadata=MetaData())
-class Base:
+def get_url() -> str:
+    """Get database URL from settings."""
+    user = settings.POSTGRES_USER
+    password = settings.POSTGRES_PASSWORD
+    server = settings.POSTGRES_SERVER
+    port = settings.POSTGRES_PORT
+    db = settings.POSTGRES_DB
+    return f"postgresql://{user}:{password}@{server}:{port}/{db}"
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
     """
-    Base class for all SQLAlchemy models.
-
-    This base provides:
-    - Automatic __tablename__ generation unless overridden
-    - Common columns (created_at, updated_at)
-    - Common serialization methods
-    """
-
-    # SQLAlchemy requires this
-    id: Mapped[Any]
-
-    # Generate __tablename__ automatically using class name
-    @declared_attr.directive
-    @classmethod
-    def __tablename__(cls) -> str:
-        """
-        Generates table name automatically from class name.
-        Converts CamelCase to snake_case (e.g., UserModel -> user_model)
-        """
-        return cls.__name__.lower()
-
-    # Common columns for all models
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    url = get_url()
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
     )
 
-    def dict(self) -> dict:
-        """
-        Convert model instance to dictionary.
-        Useful for serialization.
-        """
-        inspection = inspect(self)
-        if inspection is None:
-            return {}
-        if inspection.mapper is None:
-            return {}
-        return {column.key: getattr(self, column.key) for column in inspection.mapper.columns}
+    with context.begin_transaction():
+        context.run_migrations()
 
-    def __repr__(self) -> str:
-        """
-        String representation of the model.
-        Shows class name and id for easier debugging.
-        """
-        return f"<{self.__class__.__name__}(id={getattr(self, 'id', None)})>"
+
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode."""
+    configuration = config.get_section(config.config_ini_section)
+    if configuration is None:
+        raise ValueError("Configuration section not found")
+    configuration["sqlalchemy.url"] = get_url()
+    connectable = config.attributes.get("connection", None)
+
+    if connectable is None:
+        # only create Engine if we don't have a Connection
+        # from the outside
+        connectable = create_engine(
+            configuration["sqlalchemy.url"],
+            poolclass=pool.NullPool,
+        )
+
+    with connectable.connect() as connection:
+        do_run_migrations(connection)
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
