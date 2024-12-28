@@ -14,12 +14,6 @@ on:
 
 env:
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
-  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-  FIRST_SUPERUSER_EMAIL: ${{ secrets.FIRST_SUPERUSER_EMAIL }}
-  FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
 
 jobs:
   dependency-review:
@@ -149,6 +143,7 @@ jobs:
           # Copy .env.test to .env to prevent errors
           cp .env.test .env
           # Run tests without --rm to keep container for copying files
+          docker compose up -d db
           docker compose --env-file .env.test run test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
           # Get the container ID of the last run
           CONTAINER_ID=$(docker ps -alq)
