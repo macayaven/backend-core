@@ -144,6 +144,7 @@ jobs:
           # Ensure the .env.test file is present
           if [ ! -f .env.test ]; then
             echo ".env.test file not found!"
+            cp .env.test .env
             exit 1
           fi
           # Run tests without --rm to keep container for copying files
