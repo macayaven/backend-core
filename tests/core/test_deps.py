@@ -1,7 +1,6 @@
 """Test dependencies module."""
 
 from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator
 
 import pytest
 from fastapi import HTTPException

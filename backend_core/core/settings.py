@@ -1,7 +1,6 @@
 """Application settings management."""
 
 from functools import lru_cache
-from pathlib import Path
 from typing import List, Union
 
 from pydantic import AnyHttpUrl, Field, PostgresDsn, field_validator

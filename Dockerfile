@@ -43,9 +43,7 @@ COPY alembic alembic/
 COPY alembic.ini ./
 COPY tests tests/
 COPY tasks.py ./
-
-# Install the project itself
-RUN poetry install
+COPY pytest.ini ./
 
 # Start command
 ENTRYPOINT ["poetry", "run"]

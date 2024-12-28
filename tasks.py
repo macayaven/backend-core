@@ -20,6 +20,7 @@ def format(ctx: Context) -> None:
     """Format code using black and isort."""
     ctx.run("black .")
     ctx.run("isort .")
+    ctx.run("ruff check --fix .")
 
 
 @task
@@ -54,16 +55,8 @@ def test(ctx: Context) -> None:
         # Outside Docker, use docker-compose
         # First ensure the db service is up and healthy
         ctx.run("docker compose up -d db")
-        # Wait for db to be healthy using docker compose
-        wait_script = """
-from time import sleep
-from backend_core.db.utils import verify_database
-while not verify_database():
-    sleep(1)
-"""
-        ctx.run(f"docker compose run --rm api python -c '{wait_script}'")
         # Run the tests
-        ctx.run("docker compose run --rm api poetry run pytest tests/ -v --cov=backend_core --cov-report=xml")
+        ctx.run("docker compose run --rm test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml")
 
 
 @task

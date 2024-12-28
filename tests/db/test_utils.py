@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
@@ -6,7 +7,6 @@ from backend_core.core.security import get_password_hash, verify_password
 from backend_core.db.utils import CRUDBase
 from backend_core.models.user import User
 from backend_core.schemas.user import UserCreate, UserUpdate
-from datetime import datetime, timezone
 
 
 class TestCRUDBase:

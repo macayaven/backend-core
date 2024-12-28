@@ -1,23 +1,28 @@
 """Test configuration and fixtures."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Generator
+import logging
 import time
+from datetime import datetime, timezone
+from typing import Generator
 
 import psycopg2
 import pytest
 from fastapi.testclient import TestClient
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from backend_core.core.security import get_password_hash
-from backend_core.core.settings import get_settings, settings
-from backend_core.db.session import get_db
+from backend_core.core.settings import settings
 from backend_core.db.migrations import run_migrations
+from backend_core.db.session import get_db
 from backend_core.main import app
 from backend_core.models.user import User
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def wait_for_database(max_retries: int = 30, retry_interval: float = 1.0) -> None:
@@ -37,14 +42,14 @@ def wait_for_database(max_retries: int = 30, retry_interval: float = 1.0) -> Non
         except psycopg2.OperationalError:
             retries += 1
             time.sleep(retry_interval)
-    
+
     raise Exception(f"Database not ready after {max_retries} retries")
 
 
 def terminate_database_connections(dbname: str) -> None:
     """Terminate all connections to the database."""
     conn = psycopg2.connect(
-        dbname="postgres",
+        dbname=settings.POSTGRES_DB,
         user=settings.POSTGRES_USER,
         password=settings.POSTGRES_PASSWORD,
         host=settings.POSTGRES_SERVER,
@@ -71,12 +76,12 @@ def terminate_database_connections(dbname: str) -> None:
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db() -> None:
     """Set up test database and run migrations."""
-    # Wait for the database to be ready
+    logger.debug("Waiting for the database to be ready...")
     wait_for_database()
 
-    # Connect to postgres database to create/drop test database
+    logger.debug("Connecting to the default 'postgres' database to manage databases...")
     conn = psycopg2.connect(
-        dbname="postgres",
+        dbname="postgres",  # Use the default 'postgres' database for management tasks
         user=settings.POSTGRES_USER,
         password=settings.POSTGRES_PASSWORD,
         host=settings.POSTGRES_SERVER,
@@ -86,17 +91,26 @@ def setup_test_db() -> None:
     cur = conn.cursor()
 
     try:
-        # Drop test database if it exists
-        terminate_database_connections(settings.POSTGRES_DB)
-        cur.execute(f"DROP DATABASE IF EXISTS {settings.POSTGRES_DB}")
-        # Create test database
-        cur.execute(f"CREATE DATABASE {settings.POSTGRES_DB}")
+        logger.debug(f"Checking if the test database '{settings.POSTGRES_DB}' exists...")
+        cur.execute(f"SELECT 1 FROM pg_database WHERE datname = '{settings.POSTGRES_DB}'")
+        exists = cur.fetchone()
+
+        if not exists:
+            logger.debug(f"Database '{settings.POSTGRES_DB}' does not exist. Creating it...")
+            cur.execute(f"CREATE DATABASE {settings.POSTGRES_DB}")
+        else:
+            logger.debug(f"Database '{settings.POSTGRES_DB}' already exists.")
+
+    except Exception as e:
+        logger.error(f"An error occurred while setting up the database: {e}")
+        raise
     finally:
         cur.close()
         conn.close()
 
-    # Run migrations on test database
+    logger.debug("Running migrations on the test database...")
     run_migrations()
+    logger.debug("Database setup and migrations completed successfully.")
 
 
 @pytest.fixture(scope="session")
@@ -122,6 +136,7 @@ def db_session(engine: Engine) -> Generator[Session, None, None]:
 @pytest.fixture
 def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Create FastAPI test client."""
+
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 

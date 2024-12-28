@@ -1,12 +1,14 @@
 # backend_core/db/base_class.py
 """Base model class."""
 
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from typing import Any
 
-from sqlalchemy import MetaData, DateTime
+from sqlalchemy import DateTime, MetaData, inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
+
 
 class Base(DeclarativeBase):
     """Base class for all database models."""
@@ -15,7 +17,9 @@ class Base(DeclarativeBase):
 
     id: Any
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the base model."""

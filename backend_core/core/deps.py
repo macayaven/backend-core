@@ -29,7 +29,7 @@ def get_user_by_email(email: str, db: Session) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)) -> User:
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)) -> User:
     """Get current user from token."""
     email = decode_token(token)
     if not email:
