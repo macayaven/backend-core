@@ -144,9 +144,10 @@ jobs:
           # Ensure the .env.test file is present
           if [ ! -f .env.test ]; then
             echo ".env.test file not found!"
-            cp .env.test .env
             exit 1
           fi
+          # Copy .env.test to .env to prevent errors
+          cp .env.test .env
           # Run tests without --rm to keep container for copying files
           docker compose --env-file .env.test run test poetry run pytest tests/ -v --cov=backend_core --cov-report=xml
           # Get the container ID of the last run
